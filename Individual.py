@@ -17,3 +17,9 @@ class Individual:
         self.spouse = None        # Reference to spouse
         self.children = []        # List of children
         self.inheritor = False    # True if this individual is the inheritor
+
+    def print_individual(self):
+        if self.Y is None:
+            print(f"sex: {self.sex}, mtDNA: {self.mtDNA}, Y: None")
+        else:
+            print(f"sex: {self.sex}, mtDNA: {self.mtDNA}, Y: {self.Y}")

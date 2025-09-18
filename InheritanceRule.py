@@ -1,3 +1,5 @@
+import random
+
 class InheritanceRule:
     """
     Encapsulates inheritance logic for a population.
@@ -10,6 +12,7 @@ class InheritanceRule:
         """
         self.type = type
         self.transition_gen = transition_gen  # Feature not fully implemented
+        self.pval = 0.1                       # Probability of matrilineal descent
 
     def current_type(self, generation):
         """Return effective inheritance type at a given generation."""
@@ -31,8 +34,11 @@ class InheritanceRule:
             candidates = [c for c in children if c.sex == 'F']
         elif effective_type == 'patrilineal':
             candidates = [c for c in children if c.sex == 'M']
-        else:  # bilineal
-            candidates = children
+        else:
+            if self.pval <= random.uniform(0, 1): # Matrilineal
+                candidates = [c for c in children if c.sex == 'F']
+            else:
+                candidates = [c for c in children if c.sex == 'M']
 
         if candidates:
             # Eldest is simply the first in the list (or could be age attribute)

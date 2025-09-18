@@ -7,81 +7,137 @@ class Population:
     """
     Represents a population of individuals.
     """
-    def __init__(self, N, inheritance_rule, mean_offspring=3, sd_offspring=0.5):
-        self.N = N
-        self.inheritance_rule = inheritance_rule
-        self.mean_offspring = mean_offspring
-        self.sd_offspring = sd_offspring
-        self.individuals = []
-        self.init_founders()
+    def __init__(self, N, inheritance_rule, mean_offspring=10, sd_offspring=0.5):
+        self.N = N                                  # Population size
+        self.inheritance_rule = inheritance_rule    # Inheritance rule
+        self.mean_offspring = mean_offspring        # mean number of offspring, 2.5?
+        self.sd_offspring = sd_offspring            # standard deviation of offspring 1?
+        self.individuals = []                       # List of individuals
+        self.init_founders()                        # Set-up the founders
+        self.inheritance_rule_bilineal = []         # Store generational rule for bilineal inheritance
 
     def init_founders(self):
-        """Initialize population with N/2 males and N/2 females, unique haplotypes."""
-        males = [Individual('M') for _ in range(self.N // 2)]
-        females = [Individual('F') for _ in range(self.N - self.N // 2)]
-        self.individuals = males + females
+        """Initialize population with ceil(N/2) males and floor(N/2) females, unique haplotypes."""
+        males_founders = [Individual('M') for _ in range(self.N - self.N // 2)]
+        females_founders = [Individual('F') for _ in range(self.N // 2)]
+        self.individuals = males_founders + females_founders
+        self.inherit_founder(males_founders, females_founders)
+        self.inheritance_rule_bilineal = []
+        """Find mates for each founder from other founders population"""
+        count = 0
+        for female in females_founders:
+            female.spouse = males_founders[count]   # Some males may be left unpaired
+            males_founders[count].spouse = female          # Complete the couple
+            count = count + 1                       # Increment to next male
+        print(self.inheritance_rule.pval)
 
-    def mate_and_reproduce(self, current_gen=1):
-        """
-        Perform one generation of mating with exogamy based on inheritance rules.
-        Only the inheritor brings in an exogamous spouse.
-        """
-        next_gen = []
-        males = [ind for ind in self.individuals if ind.sex == 'M']
-        females = [ind for ind in self.individuals if ind.sex == 'F']
-        couples = min(len(males), len(females), self.N // 2)
-        random.shuffle(males)
-        random.shuffle(females)
+    def inherit_founder(self, males, females):
+        # Set the founder inheritor
+        if self.inheritance_rule.current_type(0) == 'patrilineal':
+            males[0].inheritor = True
+        elif self.inheritance_rule.current_type(0) == 'matrilineal':
+            females[0].inheritor = True
+        elif self.inheritance_rule.current_type(0) == 'bilineal':
+            if self.inheritance_rule.pval <= random.uniform(0, 1):  # Matrilineal, probably should record outcome
+                # self.inheritance_rule_bilineal.append('matrilineal')
+                females[0].inheritor = True
+                print('matrilineal')
+            else:                                # Patrilineal
+                # self.inheritance_rule_bilineal.append('patrilineal')
+                males[0].inheritor = True
 
-        for i in range(couples):
-            father = males[i]
-            mother = females[i]
+    def find_inheritor(self):
+        # Identify the inheritor and spouse.
+        for individual in self.individuals:
+            if individual.inheritor == True:
+                return individual
 
-            # Determine inheritor and spouse sex
+    def find_inheritor_population(self, population):
+        # Identify the inheritor and spouse.
+        for individual in population:
+            if individual.inheritor == True:
+                return individual
+
+    def get_inheritance_type(self, current_gen):
+        if self.inheritance_rule.current_type(current_gen) != 'bilineal':
             effective_type = self.inheritance_rule.current_type(current_gen)
-            if effective_type == 'matrilineal':
-                inheritor_parent = mother
-                spouse_sex = 'M'
-            elif effective_type == 'patrilineal':
-                inheritor_parent = father
-                spouse_sex = 'F'
-            else:  # bilineal
-                if random.random() < 0.5:
-                    inheritor_parent = father
-                    spouse_sex = 'F'
-                else:
-                    inheritor_parent = mother
-                    spouse_sex = 'M'
+        elif self.inheritance_rule.current_type(0) == 'bilineal':
+            if self.inheritance_rule.pval <= random.uniform(0, 1):  # Matrilineal, probably should record outcome
+                self.inheritance_rule_bilineal.append('matrilineal')
+                print('matrilineal')
+            else:                                # Patrilineal
+                self.inheritance_rule_bilineal.append('patrilineal')
+            effective_type = self.inheritance_rule_bilineal[-1]
 
-            # Create exogamous spouse
-            print('Spouse:')
-            spouse_mtDNA = str(uuid.uuid4())
-            spouse_Y = str(uuid.uuid4()) if spouse_sex == 'M' else None
-            spouse = Individual(spouse_sex, spouse_mtDNA, spouse_Y)
-            inheritor_parent.spouse = spouse
-            spouse.spouse = inheritor_parent
-            print(f"Spouse mtDNA: {spouse.mtDNA}")
-            print(f"Spouse Y: {spouse.Y}")
+        return effective_type
 
-            # Produce offspring
-            num_offspring = max(0, round(random.gauss(self.mean_offspring, self.sd_offspring)))
-            children = []
-            for _ in range(num_offspring):
-                sex = random.choice(['M', 'F'])
-                mtDNA = mother.mtDNA  # mtDNA always from mother
-                Y = father.Y if sex == 'M' else None
-                child = Individual(sex, mtDNA, Y)
-                children.append(child)
-                next_gen.append(child)
+    def mate_and_reproduce_inheritors(self, current_gen=1):
+        # Identify the inheritor and spouse.
+        inheritor = self.find_inheritor()
+        spouse = inheritor.spouse
 
-            # Assign single eldest inheritor
-            self.inheritance_rule.assign_inheritors(children, generation=current_gen)
+        if inheritor.sex == 'M':
+            father = inheritor
+            father.print_individual
+            mother = spouse
+        else:
+            mother = inheritor
+            father = spouse
 
-        # Cap population to N
-        if len(next_gen) > self.N:
-            next_gen = random.sample(next_gen, self.N)
+        # Get current inheritance type
+        effective_type = self.get_inheritance_type(current_gen)
+
+        # Produce offspring
+        next_gen = []
+        num_offspring = max(0, round(random.gauss(self.mean_offspring, self.sd_offspring)))
+        children = []
+        for _ in range(num_offspring):
+            sex = random.choice(['M', 'F'])
+            mtDNA = mother.mtDNA  # mtDNA always from mother
+            Y = father.Y if sex == 'M' else None
+            child = Individual(sex, mtDNA, Y)
+            children.append(child)
+            next_gen.append(child)
+
+        # Assign single eldest inheritor
+        self.inheritance_rule.assign_inheritors(children, generation=current_gen)
+
+        # Maintain population size
+        number_of_males = self.number_of_gender('M', next_gen)
+        number_of_females = self.number_of_gender('F', next_gen)
+
+        # Find inheritor from list of children
+        inheritor= self.find_inheritor_population(next_gen)
+
+        if inheritor.sex == 'M':
+            if number_of_females < self.N//2-1: # Need to add more females
+                next_gen.append(Individual('F', str(uuid.uuid4()), None))
+            spouse = Individual('F', str(uuid.uuid4()), None)
+            inheritor.spouse = spouse
+            spouse.spouse = inheritor
+            next_gen.append(spouse)
+            number_of_females = self.number_of_gender('F', next_gen)
+            if number_of_females + number_of_males < self.N: # Need to add more males
+                next_gen.append(Individual('M', str(uuid.uuid4()), str(uuid.uuid4())))
+        else:
+            if number_of_females < self.N//2: # Need to add more females
+                next_gen.append(Individual('F', str(uuid.uuid4()), None))
+            number_of_females = self.number_of_gender('F', next_gen)
+            if number_of_females + number_of_males < self.N-1: # Need to add more males
+                next_gen.append(Individual('M', str(uuid.uuid4()), str(uuid.uuid4())))
+            spouse = Individual('M', str(uuid.uuid4()), str(uuid.uuid4()))
+            inheritor.spouse = spouse
+            spouse.spouse = inheritor
+            next_gen.append(spouse)
+
         self.individuals = next_gen
-        self.print_population(current_gen)
+
+    def number_of_gender(self, sex_string, population):
+        gender_count = 0
+        for individual in population:
+            if individual.sex == sex_string:
+                gender_count = gender_count + 1
+        return gender_count
 
     def print_population(self, generation):
         """

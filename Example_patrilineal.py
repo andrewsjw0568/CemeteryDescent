@@ -11,7 +11,7 @@ population = Population(N=25, inheritance_rule=rule)
 
 cemetery = Cemetery()
 
-generations = 1# Number of generations to simulate
+generations = 10  # Number of generations to simulate
 
 for gen in range(1, generations + 1):
     # Evolve the population
@@ -23,9 +23,6 @@ for gen in range(1, generations + 1):
 
     # Add inheritor + spouse to cemetery
     cemetery.add_generation(inheritor)
-
-    print("Population:")
-    population.print_population(gen)
 
     # Optional: print the cemetery for debugging
     print(f"\nGeneration {gen} Cemetery:")

@@ -1,6 +1,7 @@
 from collections import Counter
 import numpy as np
 
+
 class Cemetery:
     """
     Represents the cemetery (burial site) for the population.
@@ -11,12 +12,7 @@ class Cemetery:
 
     def add_generation(self, inheritor):
         """Add inheritor + spouse for this generation to the cemetery."""
-        generation_group = []
-        if inheritor:
-            generation_group.append(inheritor)
-            if inheritor.spouse:
-                generation_group.append(inheritor.spouse)
-        self.generations.append(generation_group)
+        self.generations.append(inheritor)
 
     def print_cemetery(self):
         """
