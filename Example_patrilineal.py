@@ -7,22 +7,27 @@ from Cemetery import Cemetery
 rule = InheritanceRule(type='patrilineal')
 
 # Population size N
-population = Population(N=25, inheritance_rule=rule)
+population = Population(N=10, inheritance_rule=rule)
 
 cemetery = Cemetery()
 
 generations = 10  # Number of generations to simulate
 
+# population.print_population(1)  # Founders are set up correctly this is just a debug step
+
 for gen in range(1, generations + 1):
     # Evolve the population
-    population.mate_and_reproduce(current_gen=gen)
+    population.mate_and_reproduce_inheritors(current_gen=gen)
 
     # Identify the single inheritor
-    inheritors = [ind for ind in population.individuals if ind.inheritor]
-    inheritor = inheritors[0] if inheritors else None
+    inheritor = population.find_inheritor()
 
     # Add inheritor + spouse to cemetery
-    cemetery.add_generation(inheritor)
+    cemetery.add_generation([inheritor, inheritor.spouse])
+
+    # print("Population:")
+    # population.print_population(gen)
+
 
     # Optional: print the cemetery for debugging
     print(f"\nGeneration {gen} Cemetery:")
