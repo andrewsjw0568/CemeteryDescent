@@ -29,13 +29,18 @@ This project provides Python code to simulate or analyse descent / inheritance r
 
 ### Prerequisites
 
-- Python 3.x  
-- Standard Python packages 
--- uuid
--- random
--- collections
--- numpy
--- matplotlib
+* Python 3.x  
+* Standard Python packages 
+
+  * uuid
+
+  * random
+
+  * collections
+
+  * numpy
+
+  * matplotlib
 
 ### Installation
 
